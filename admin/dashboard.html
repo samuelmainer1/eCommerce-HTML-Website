@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .admin-shell { max-width: 1400px; margin: 0 auto; padding: 28px 5% 60px; }
+    .admin-shell h1 { margin: 0 0 4px; font-size: 2rem; }
+    .admin-sub { color: #888; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <div class="admin-shell">
+    <h1>Dashboard</h1>
+    <p class="admin-sub" id="admin-signed">Signed in as Admin</p>
+
+    <div class="admin-pills" id="admin-pills">
+      <button type="button" class="active" data-sec="overview">Overview</button>
+      <button type="button" data-sec="analytics">Analytics</button>
+      <button type="button" data-sec="vendors">Vendors <span class="badge" id="badge-vendors">0</span></button>
+      <button type="button" data-sec="products">Products <span class="badge" id="badge-products">0</span></button>
+      <button type="button" data-sec="customers">Customers</button>
+      <button type="button" data-sec="categories">Categories</button>
+      <button type="button" data-sec="brands">Brands</button>
+      <button type="button" data-sec="homepage">Homepage</button>
+      <button type="button" data-sec="coupons">Coupons</button>
+      <button type="button" data-sec="reports">Reports</button>
+      <button type="button" data-sec="newsletter">Newsletter</button>
+      <button type="button" data-sec="blog">Blog</button>
+      <button type="button" data-sec="careers">Careers</button>
+      <button type="button" data-sec="orders">Orders <span class="badge" id="badge-orders">0</span></button>
+      <button type="button" data-sec="messages">Messages</button>
+      <button type="button" data-sec="settings">Settings</button>
+      <button type="button" data-sec="addproduct">+ Add product</button>
+    </div>
+
+    <div id="section-overview">
+      <div class="stat-cards-row" id="overview-stats"></div>
+    </div>
+
+    <div id="section-analytics" class="hidden">
+      <h2>Analytics</h2>
+      <p style="color:#666;">Demo: revenue and order counts from local data.</p>
+      <div class="stat-cards-row" id="analytics-stats"></div>
+    </div>
+
+    <div id="section-vendors" class="hidden">
+      <div class="sub-tabs" id="vendor-tabs">
+        <button type="button" class="active" data-filter="pending">Pending</button>
+        <button type="button" data-filter="active">Approved</button>
+        <button type="button" data-filter="rejected">Rejected</button>
+        <button type="button" data-filter="disabled">Suspended</button>
+        <button type="button" data-filter="all">All</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Store</th><th>Contact</th><th>Status</th><th>Action</th></tr></thead><tbody id="admin-vendors"></tbody></table></div>
+    </div>
+
+    <div id="section-products" class="hidden">
+      <div class="sub-tabs">
+        <button type="button" class="active" onclick="renderProducts('pending'); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active')); this.classList.add('active');">Pending</button>
+        <button type="button" onclick="renderProducts('approved'); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active')); this.classList.add('active');">Approved</button>
+        <button type="button" onclick="renderProducts('all'); this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active')); this.classList.add('active');">All</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Product</th><th>Vendor</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-products"></tbody></table></div>
+    </div>
+
+    <div id="section-customers" class="hidden">
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="admin-users"></tbody></table></div>
+    </div>
+
+    <div id="section-brands" class="hidden">
+      <h2>Brands</h2>
+      <p style="color:#666;font-size:0.9rem;">Link each brand to a category. Shop filters show brands for the selected category.</p>
+      <div class="form-group"><label>Brand name</label><input id="br-name" placeholder="Samsung"></div>
+      <div class="form-group"><label>Category</label><select id="br-cat"></select></div>
+      <button type="button" class="btn btn-accent" onclick="addBrand()">Add brand</button>
+      <div class="table-wrap" style="margin-top:16px;"><table><thead><tr><th>Brand</th><th>Category</th><th></th></tr></thead><tbody id="brands-table"></tbody></table></div>
+    </div>
+    <div id="section-categories" class="hidden">
+      <h2>Categories</h2>
+      <p style="color:#666;font-size:0.9rem;">Categories appear in the shop filters and All Categories menu.</p>
+      <div class="form-group"><label>New category</label><input type="text" id="new-cat-name" placeholder="e.g. Sports"></div>
+      <button type="button" class="btn btn-accent" onclick="addCategory()">Add category</button>
+      <ul id="cat-list" style="margin-top:16px;line-height:2;"></ul>
+    </div>
+
+    <div id="section-homepage" class="hidden">
+      <h2>Homepage / Hero</h2>
+      <p style="color:#666;font-size:0.9rem;">Upload an image or paste a URL. Images are compressed in the browser.</p>
+      <div id="hero-editor"></div>
+      <button type="button" class="btn btn-accent" onclick="saveHeroSlides()">Save hero slides</button>
+      <button type="button" class="btn btn-outline" onclick="resetHeroSlides()">Reset defaults</button>
+    </div>
+
+    <div id="section-coupons" class="hidden">
+      <h2>Coupons</h2>
+      <div id="coupon-list"></div>
+      <div class="form-group"><label>Code</label><input id="c-code"></div>
+      <div class="form-group"><label>Type</label>
+        <select id="c-type"><option value="percent">Percent</option><option value="fixed">Fixed KSh</option><option value="freeship">Free shipping</option></select>
+      </div>
+      <div class="form-group"><label>Value</label><input id="c-val" type="number"></div>
+      <button type="button" class="btn btn-accent" onclick="addCoupon()">Add coupon</button>
+    </div>
+
+    <div id="section-reports" class="hidden">
+      <h2>Reports</h2>
+      <div id="reports-body"></div>
+    </div>
+
+    <div id="section-newsletter" class="hidden">
+      <h2>Newsletter</h2>
+      <div class="table-wrap"><table><thead><tr><th>Email</th><th>Date</th></tr></thead><tbody id="nl-list"></tbody></table></div>
+      <div class="form-group"><label>Subject</label><input id="nl-subj"></div>
+      <div class="form-group"><label>Message</label><textarea id="nl-body" rows="3"></textarea></div>
+      <button type="button" class="btn btn-accent" onclick="sendNewsletterDemo()">Send (demo)</button>
+    </div>
+
+    <div id="section-blog" class="hidden">
+      <h2>Blog</h2>
+      <div class="form-group"><label>Title</label><input id="blog-title" style="width:100%;"></div>
+      <div class="form-group"><label>Summary</label><input id="blog-summary" style="width:100%;"></div>
+      <div class="form-group"><label>Content</label><textarea id="blog-content" rows="4" style="width:100%;"></textarea></div>
+      <div class="form-group"><label>Hero image URL</label><input id="blog-image" style="width:100%;" placeholder="https://..."></div>
+      <div class="form-group"><label>Or upload hero image</label><input type="file" id="blog-file" accept="image/*"></div>
+      <button type="button" class="btn btn-accent" onclick="addBlogPost()">Publish post</button>
+      <div id="blog-admin-list" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="section-careers" class="hidden">
+      <h2>Careers</h2>
+      <div class="form-group"><label>Job title</label><input id="job-title" style="width:100%;"></div>
+      <div class="form-group"><label>Department</label><input id="job-dept"></div>
+      <div class="form-group"><label>Location</label><input id="job-loc" value="Nairobi"></div>
+      <div class="form-group"><label>Description</label><textarea id="job-desc" rows="3" style="width:100%;"></textarea></div>
+      <button type="button" class="btn btn-accent" onclick="addCareer()">Publish job</button>
+      <div id="careers-admin-list" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="section-orders" class="hidden">
+      <h2>Orders</h2>
+      <div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Tracking</th><th>Update</th></tr></thead><tbody id="admin-orders"></tbody></table></div>
+    </div>
+
+    <div id="section-messages" class="hidden">
+      <h2>Messages</h2>
+      <div id="msg-list"></div>
+    </div>
+
+    <div id="section-settings" class="hidden">
+      <h2>Settings</h2>
+      <div class="form-group"><label>Phone</label><input id="set-phone" value="+254 722 359 298"></div>
+      <div class="form-group"><label>Email</label><input id="set-email" value="orders@bigdrop.co.ke"></div>
+      <div class="form-group"><label>Delivery fee (KSh)</label><input id="set-delivery" type="number" value="290"></div>
+      <div class="form-group"><label>Announcement</label><input id="set-announce" style="width:100%;"></div>
+      <button type="button" class="btn btn-accent" onclick="saveSettings()">Save</button>
+      <button type="button" class="btn btn-outline" onclick="if(confirm('Reset all demo data?')){localStorage.clear();location.reload();}">Reset demo data</button>
+    </div>
+
+    <div id="section-addproduct" class="hidden">
+      <h2>Add product (as any vendor)</h2>
+      <div class="form-group"><label>Vendor</label><select id="ap-vendor"></select></div>
+      <div class="form-group"><label>Title</label><input id="ap-title" style="width:100%;"></div>
+      <div class="form-group"><label>Category</label><select id="ap-cat"></select></div>
+      <div class="form-group"><label>Price</label><input id="ap-price" type="number"></div>
+      <div class="form-group"><label>Stock</label><input id="ap-stock" type="number" value="20"></div>
+      <div class="form-group"><label>Image URL</label><input id="ap-image" style="width:100%;" placeholder="https://..."></div>
+      <div class="form-group"><label>Or upload image</label><input type="file" id="ap-file" accept="image/*"></div>
+      <div class="form-group"><label>Description</label><textarea id="ap-desc" rows="3" style="width:100%;"></textarea></div>
+      <button type="button" class="btn btn-accent" onclick="adminAddProduct()">Publish product</button>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="../js/data.js"></script>
+  <script src="../js/toast.js"></script>
+  <script src="../js/features.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/header.js"></script>
+  <script src="../js/footer.js"></script>
+  <script>
+    const user = getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      alert('Admin only. admin@bigdrop.co.ke / admin123');
+      location.href = 'login.html';
+    }
+    document.getElementById('admin-signed').textContent = 'Signed in as ' + (user.name || 'Admin') + ' · BigDrop operations';
+
+    function showSection(name) {
+      document.querySelectorAll('[id^="section-"]').forEach(function(el){ el.classList.add('hidden'); });
+      var sec = document.getElementById('section-' + name);
+      if (sec) sec.classList.remove('hidden');
+      document.querySelectorAll('#admin-pills button').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-sec') === name);
+      });
+      if (name === 'homepage') loadHeroEditor();
+      if (name === 'categories') renderCats();
+      if (name === 'brands') renderBrandsAdmin();
+      if (name === 'coupons') renderCoupons();
+      if (name === 'newsletter') renderNewsletter();
+      if (name === 'messages') renderMessages();
+      if (name === 'reports') renderReports();
+      if (name === 'addproduct') fillAddProductForm();
+      if (name === 'blog') renderBlogAdmin();
+      if (name === 'careers') renderCareersAdmin();
+      if (name === 'settings') loadSettingsForm();
+    }
+    document.getElementById('admin-pills').addEventListener('click', function(e) {
+      var btn = e.target.closest('button[data-sec]');
+      if (btn) showSection(btn.getAttribute('data-sec'));
+    });
+
+    function renderOverview() {
+      var products = getProducts();
+      var vendors = getVendors();
+      var pendingP = products.filter(function(p){ return p.status === 'pending'; }).length;
+      var pendingV = vendors.filter(function(v){ return v.status === 'pending'; }).length;
+      var sales = typeof getAdminSalesStats === 'function' ? getAdminSalesStats() : { revenue: 0, orderCount: getOrders().length };
+      document.getElementById('badge-products').textContent = pendingP;
+      document.getElementById('badge-vendors').textContent = pendingV;
+      document.getElementById('badge-orders').textContent = getOrders().length;
+      document.getElementById('overview-stats').innerHTML =
+        '<div class="stat-card-modern"><div class="label">Pending vendors</div><div class="value">' + pendingV + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Pending products</div><div class="value">' + pendingP + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Revenue</div><div class="value">' + (typeof formatPrice==='function'?formatPrice(sales.revenue):('KSh '+sales.revenue)) + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Orders</div><div class="value">' + sales.orderCount + '</div></div>';
+      document.getElementById('analytics-stats').innerHTML = document.getElementById('overview-stats').innerHTML;
+    }
+
+    var vendorFilter = 'pending';
+    document.getElementById('vendor-tabs').addEventListener('click', function(e) {
+      var btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      vendorFilter = btn.getAttribute('data-filter');
+      document.querySelectorAll('#vendor-tabs button').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderVendors();
+    });
+
+    function renderVendors() {
+      var vendors = getVendors();
+      var list = vendors.filter(function(v) {
+        if (vendorFilter === 'all') return true;
+        if (vendorFilter === 'active') return v.status === 'active' || v.status === 'approved';
+        return v.status === vendorFilter;
+      });
+      document.getElementById('admin-vendors').innerHTML = list.length ? list.map(function(v) {
+        return '<tr><td><strong>' + (v.shopName||v.name||'') + '</strong><br><small>' + (v.name||'') + '</small></td>' +
+          '<td>' + (v.email||'') + '<br>' + (v.phone||'') + '</td>' +
+          '<td><span class="status status-' + (v.status||'') + '">' + (v.status||'') + '</span></td>' +
+          '<td>' +
+          (v.status==='pending' ? '<button class="btn btn-sm btn-accent" onclick="setVendorStatus(\''+v.id+'\',\'active\')">Approve</button> <button class="btn btn-sm btn-danger" onclick="setVendorStatus(\''+v.id+'\',\'rejected\')">Reject</button>' : '') +
+          (v.status==='active'||v.status==='approved' ? '<button class="btn btn-sm btn-outline" onclick="setVendorStatus(\''+v.id+'\',\'disabled\')">Suspend</button>' : '') +
+          (v.status==='disabled' ? '<button class="btn btn-sm btn-accent" onclick="setVendorStatus(\''+v.id+'\',\'active\')">Enable</button>' : '') +
+          ' <button class="btn btn-sm btn-danger" onclick="if(confirm(\'Delete vendor?\'))deleteVendor(\''+v.id+'\')">Delete</button>' +
+          '</td></tr>';
+      }).join('') : '<tr><td colspan="4">No vendors in this filter</td></tr>';
+    }
+
+    function setVendorStatus(id, status) {
+      var vendors = getVendors();
+      var i = vendors.findIndex(function(v){ return v.id === id; });
+      if (i >= 0) { vendors[i].status = status; saveVendors(vendors); }
+      renderVendors(); renderOverview();
+    }
+    function deleteVendor(id) {
+      saveVendors(getVendors().filter(function(v){ return v.id !== id; }));
+      renderVendors(); renderOverview();
+    }
+
+    function renderProducts(filter) {
+      filter = filter || 'pending';
+      var products = getProducts();
+      if (filter !== 'all') products = products.filter(function(p){ return p.status === filter; });
+      document.getElementById('admin-products').innerHTML = products.map(function(p) {
+        var vendor = getVendorById(p.vendorId);
+        return '<tr><td style="display:flex;gap:8px;align-items:center;"><img src="'+(p.image||'')+'" width="40" height="40" style="object-fit:cover;border-radius:6px;">'+p.title+'</td>' +
+          '<td>'+(vendor?vendor.shopName:'—')+'</td><td>'+formatPrice(p.price)+'</td>' +
+          '<td><span class="status status-'+p.status+'">'+p.status+'</span></td><td>' +
+          (p.status==='pending'?'<button class="btn btn-sm btn-accent" onclick="approve(\''+p.id+'\')">Approve</button> <button class="btn btn-sm btn-danger" onclick="reject(\''+p.id+'\')">Reject</button> ':'') +
+          '<button class="btn btn-sm btn-outline" onclick="adminDeleteProduct(\''+p.id+'\')">Delete</button></td></tr>';
+      }).join('') || '<tr><td colspan="5">No products</td></tr>';
+    }
+    function approve(id) {
+      var products = getProducts();
+      var i = products.findIndex(function(p){ return p.id===id; });
+      if (i>=0) { products[i].status='approved'; saveProducts(products); }
+      renderProducts('pending'); renderOverview();
+    }
+    function reject(id) {
+      var products = getProducts();
+      var i = products.findIndex(function(p){ return p.id===id; });
+      if (i>=0) { products[i].status='rejected'; saveProducts(products); }
+      renderProducts('pending'); renderOverview();
+    }
+    function adminDeleteProduct(id) {
+      if (!confirm('Delete product?')) return;
+      saveProducts(getProducts().filter(function(p){ return p.id!==id; }));
+      renderProducts('all'); renderOverview();
+    }
+
+    function renderUsers() {
+      document.getElementById('admin-users').innerHTML = getUsers().map(function(u){
+        return '<tr><td>'+(u.name||'')+'</td><td>'+(u.email||'')+'</td><td>'+(u.role||'customer')+'</td></tr>';
+      }).join('') || '<tr><td colspan="3">No users</td></tr>';
+    }
+
+    function renderOrders() {
+      document.getElementById('admin-orders').innerHTML = getOrders().map(function(o){
+        return '<tr><td>'+o.id+'<br><small>'+o.date+'</small></td><td>'+(o.customerName||o.customerEmail||'')+'</td><td>'+formatPrice(o.total)+'</td>' +
+          '<td>'+o.status+'</td><td>'+(o.trackingNumber||'—')+'<br><a href="../invoice.html?id='+o.id+'" style="color:#0a7a3c;font-size:0.8rem;">Invoice</a></td>' +
+          '<td><select onchange="updateOrderStatus(\''+o.id+'\', this.value); renderOrders();">' +
+          ['ordered','processing','shipped','delivered'].map(function(s){ return '<option value="'+s+'"'+(o.status===s?' selected':'')+'>'+s+'</option>'; }).join('') +
+          '</select></td></tr>';
+      }).join('') || '<tr><td colspan="6">No orders</td></tr>';
+    }
+
+    // Categories
+    function getCats() {
+      try { return JSON.parse(localStorage.getItem('bd_categories')||'null') || ['Phones','TVs','Electronics','Fashion','Home','Beauty','Food']; }
+      catch(e){ return ['Phones','TVs','Electronics','Fashion','Home','Beauty','Food']; }
+    }
+    function renderCats() {
+      document.getElementById('cat-list').innerHTML = getCats().map(function(c){ return '<li>'+c+'</li>'; }).join('');
+    }
+    function addCategory() {
+      var name = (document.getElementById('new-cat-name').value||'').trim();
+      if (!name) return;
+      var cats = getCats();
+      if (cats.indexOf(name) < 0) cats.push(name);
+      localStorage.setItem('bd_categories', JSON.stringify(cats));
+      document.getElementById('new-cat-name').value = '';
+      renderCats();
+      if (typeof showToast==='function') showToast('Category added — visible in All Categories menu', 'success');
+    }
+
+    // Hero
+        var DEFAULT_HERO = [
+      { image:'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&h=500&fit=crop', title:'Mega Deals Week', subtitle:'Up to 70% Off on electronics and more', btnText:'Shop Now', btnLink:'shop.html?deal=1' },
+      { image:'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1600&h=500&fit=crop', title:'Phones & Tablets', subtitle:'Latest smartphones at the best prices', btnText:'Shop Phones', btnLink:'shop.html?cat=Phones' },
+      { image:'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=1600&h=500&fit=crop', title:'TVs & Electronics', subtitle:'Smart TVs and home entertainment deals', btnText:'Check Deals', btnLink:'shop.html?cat=TVs' },
+      { image:'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1600&h=500&fit=crop', title:'Health & Beauty', subtitle:'CeraVe, Dove, L\'Oréal and more', btnText:'Shop Beauty', btnLink:'shop.html?cat=Beauty' },
+      { image:'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&h=500&fit=crop', title:'Fashion & Lifestyle', subtitle:'Trendy styles for the whole family', btnText:'Shop Fashion', btnLink:'shop.html?cat=Fashion' }
+    ];
+    function compressFile(file, maxBytes) {
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var w = img.width, h = img.height, max = 1600;
+            if (w > max) { h = Math.round(h * max / w); w = max; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            var q = 0.85, data = canvas.toDataURL('image/jpeg', q);
+            while (data.length > (maxBytes||1000000) * 1.37 && q > 0.4) {
+              q -= 0.1; data = canvas.toDataURL('image/jpeg', q);
+            }
+            resolve(data);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    function loadHeroEditor() {
+      var slides = [];
+      try { slides = JSON.parse(localStorage.getItem('bd_hero_slides')||'null') || DEFAULT_HERO; } catch(e){ slides = DEFAULT_HERO; }
+      if (!slides || slides.length < 5) {
+        slides = DEFAULT_HERO.map(function(d, i){ return Object.assign({}, d, (slides && slides[i]) || {}); });
+      }
+      slides = slides.slice(0, 5);
+      var el = document.getElementById('hero-editor');
+      el.innerHTML = slides.map(function(s,i){
+        return '<div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;margin-bottom:12px;">' +
+          '<strong>Slide '+(i+1)+'</strong>' +
+          '<div class="form-group"><label>Image URL</label><input data-i="'+i+'" data-f="image" value="'+(s.image||'')+'" style="width:100%;"></div>' +
+          '<div class="form-group"><label>Upload image</label><input type="file" accept="image/*" data-upload="'+i+'"></div>' +
+          '<div class="form-group"><label>Title</label><input data-i="'+i+'" data-f="title" value="'+(s.title||'')+'" style="width:100%;"></div>' +
+          '<div class="form-group"><label>Subtitle</label><input data-i="'+i+'" data-f="subtitle" value="'+(s.subtitle||'')+'" style="width:100%;"></div>' +
+          '<div class="form-group"><label>Button text</label><input data-i="'+i+'" data-f="btnText" value="'+(s.btnText||'')+'"></div>' +
+          '<div class="form-group"><label>Button link</label><input data-i="'+i+'" data-f="btnLink" value="'+(s.btnLink||'')+'" style="width:100%;"></div></div>';
+      }).join('');
+      el.querySelectorAll('input[type=file][data-upload]').forEach(function(inp){
+        inp.onchange = async function() {
+          if (!this.files[0]) return;
+          var data = await compressFile(this.files[0], 1000000);
+          var i = +this.getAttribute('data-upload');
+          var urlInput = el.querySelector('input[data-i="'+i+'"][data-f="image"]');
+          if (urlInput) urlInput.value = data;
+          if (typeof showToast==='function') showToast('Image compressed & ready', 'success');
+        };
+      });
+    }
+    function saveHeroSlides() {
+      var inputs = document.querySelectorAll('#hero-editor input[data-i]');
+      var slides = {};
+      inputs.forEach(function(inp){
+        var i = inp.getAttribute('data-i');
+        var f = inp.getAttribute('data-f');
+        if (!slides[i]) slides[i] = {};
+        slides[i][f] = inp.value.trim();
+      });
+      var arr = Object.keys(slides).sort().map(function(k){ return slides[k]; });
+      while (arr.length < 5) arr.push(Object.assign({}, DEFAULT_HERO[arr.length] || {}));
+      arr = arr.slice(0, 5);
+      localStorage.setItem('bd_hero_slides', JSON.stringify(arr));
+      alert('Hero saved. Refresh the homepage to see changes.');
+    }
+    function resetHeroSlides() {
+      localStorage.removeItem('bd_hero_slides');
+      loadHeroEditor();
+    }
+
+    function getCoupons() {
+      try { return JSON.parse(localStorage.getItem('bd_coupons')||'null') || [
+        {code:'BIGDROP10',type:'percent',value:10},{code:'FREESHIP',type:'freeship',value:0},{code:'SAVE500',type:'fixed',value:500}
+      ]; } catch(e){ return []; }
+    }
+    function renderCoupons() {
+      document.getElementById('coupon-list').innerHTML = getCoupons().map(function(c){
+        return '<div style="padding:8px 0;border-bottom:1px solid #eee;"><strong>'+c.code+'</strong> — '+c.type+' '+c.value+'</div>';
+      }).join('');
+    }
+    function addCoupon() {
+      var code = (document.getElementById('c-code').value||'').trim().toUpperCase();
+      if (!code) return;
+      var list = getCoupons();
+      list.push({ code: code, type: document.getElementById('c-type').value, value: +document.getElementById('c-val').value||0 });
+      localStorage.setItem('bd_coupons', JSON.stringify(list));
+      renderCoupons();
+    }
+
+    function renderNewsletter() {
+      var list = JSON.parse(localStorage.getItem('bd_newsletter')||'[]');
+      document.getElementById('nl-list').innerHTML = list.length ? list.map(function(x){
+        return '<tr><td>'+x.email+'</td><td>'+(x.date||'')+'</td></tr>';
+      }).join('') : '<tr><td colspan="2">No subscribers</td></tr>';
+    }
+    function sendNewsletterDemo() {
+      alert('Demo: email queued to ' + JSON.parse(localStorage.getItem('bd_newsletter')||'[]').length + ' subscribers.');
+    }
+    function renderMessages() {
+      var list = JSON.parse(localStorage.getItem('bd_messages')||'[]');
+      document.getElementById('msg-list').innerHTML = list.length ? list.map(function(m){
+        return '<div style="background:#fff;padding:14px;border-radius:10px;margin-bottom:10px;border:1px solid #eee;"><strong>'+m.name+'</strong> &lt;'+m.email+'&gt;<br><small>'+m.subject+'</small><p>'+m.message+'</p></div>';
+      }).join('') : '<p>No messages</p>';
+    }
+    function renderReports() {
+      var sales = typeof getAdminSalesStats === 'function' ? getAdminSalesStats() : { revenue:0, orderCount:0 };
+      document.getElementById('reports-body').innerHTML = '<p>Orders: <strong>'+getOrders().length+'</strong></p><p>Revenue: <strong>'+formatPrice(sales.revenue)+'</strong></p><p>Products: <strong>'+getProducts().length+'</strong></p>';
+    }
+    function renderBlogAdmin() {
+      var posts = (typeof BLOG_POSTS !== 'undefined') ? BLOG_POSTS : [];
+      document.getElementById('blog-admin-list').innerHTML = posts.length ? posts.map(function(p){
+        return '<div style="padding:10px 0;border-bottom:1px solid #eee;">'+p.title+'</div>';
+      }).join('') : '<p>See blog.html for public posts.</p>';
+    }
+
+    function saveSettings() {
+      var prev = typeof getSettings === 'function' ? getSettings() : {};
+      var s = Object.assign({}, prev, {
+        phone: document.getElementById('set-phone').value,
+        email: document.getElementById('set-email').value,
+        delivery: +document.getElementById('set-delivery').value || 290,
+        announce: document.getElementById('set-announce').value,
+        announceOn: document.getElementById('set-announce-on') ? document.getElementById('set-announce-on').checked : true,
+        maintenance: document.getElementById('set-maint') ? document.getElementById('set-maint').checked : false,
+        address: document.getElementById('set-address') ? document.getElementById('set-address').value : prev.address
+      });
+      s.delivery = +s.delivery || 290;
+      if (typeof saveSettingsObj === 'function') saveSettingsObj(s);
+      else {
+        localStorage.setItem('bd_settings', JSON.stringify(s));
+        localStorage.setItem('bd_delivery_fee', String(s.delivery));
+        localStorage.setItem('bd_announce', s.announce || '');
+      }
+      localStorage.setItem('bd_delivery_fee', String(s.delivery));
+      alert('Settings saved. Delivery fee is now KSh ' + s.delivery + '. Refresh cart/checkout to see it.');
+    }
+
+    function fillAddProductForm() {
+      document.getElementById('ap-vendor').innerHTML = getVendors().map(function(v){
+        return '<option value="'+v.id+'">'+(v.shopName||v.name)+'</option>';
+      }).join('');
+      document.getElementById('ap-cat').innerHTML = getCats().map(function(c){
+        return '<option value="'+c+'">'+c+'</option>';
+      }).join('');
+    }
+    async function adminAddProduct() {
+      var img = document.getElementById('ap-image').value.trim();
+      var file = document.getElementById('ap-file').files[0];
+      if (file) img = await compressFile(file, 1000000);
+      if (!img) img = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400&h=400&fit=crop';
+      var product = {
+        id: 'p' + Date.now(),
+        title: document.getElementById('ap-title').value.trim(),
+        category: document.getElementById('ap-cat').value,
+        price: +document.getElementById('ap-price').value,
+        stock: +document.getElementById('ap-stock').value || 20,
+        image: img,
+        images: [img],
+        description: document.getElementById('ap-desc').value.trim() || 'Quality product on BigDrop Kenya.',
+        vendorId: document.getElementById('ap-vendor').value,
+        status: 'approved',
+        rating: 4.5,
+        reviews: 1
+      };
+      if (!product.title || !product.price) { alert('Title and price required'); return; }
+      var products = getProducts();
+      products.unshift(product);
+      saveProducts(products);
+      alert('Product published for selected vendor');
+      showSection('products');
+      renderProducts('approved');
+      renderOverview();
+    }
+
+
+    function renderBrandsAdmin() {
+      var cats = getCats();
+      var sel = document.getElementById('br-cat');
+      if (sel) sel.innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+      var list = typeof getBrands === 'function' ? getBrands() : [];
+      document.getElementById('brands-table').innerHTML = list.map(function(b){
+        return '<tr><td>'+b.name+'</td><td>'+b.category+'</td><td><button class="btn btn-sm btn-danger" onclick="deleteBrand(\''+b.id+'\')">Delete</button></td></tr>';
+      }).join('') || '<tr><td colspan="3">No brands</td></tr>';
+    }
+    function addBrand() {
+      var name = (document.getElementById('br-name').value||'').trim();
+      var cat = document.getElementById('br-cat').value;
+      if (!name) return;
+      var list = getBrands();
+      list.push({ id: 'b'+Date.now(), name: name, category: cat });
+      saveBrands(list);
+      document.getElementById('br-name').value = '';
+      renderBrandsAdmin();
+    }
+    function deleteBrand(id) {
+      saveBrands(getBrands().filter(function(b){ return b.id !== id; }));
+      renderBrandsAdmin();
+    }
+    function renderBlogAdmin() {
+      var posts = typeof getBlogPosts === 'function' ? getBlogPosts() : [];
+      document.getElementById('blog-admin-list').innerHTML = posts.map(function(p){
+        return '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:10px;">' +
+          '<strong>'+p.title+'</strong> ' + (p.published===false?'<em>(hidden)</em>':'') +
+          '<div style="margin-top:8px;">' +
+          '<button class="btn btn-sm btn-outline" onclick="toggleBlog(\''+p.id+'\')">'+(p.published===false?'Publish':'Hide')+'</button> ' +
+          '<button class="btn btn-sm btn-danger" onclick="deleteBlog(\''+p.id+'\')">Delete</button></div></div>';
+      }).join('') || '<p>No posts</p>';
+    }
+    async function addBlogPost() {
+      var title = (document.getElementById('blog-title').value||'').trim();
+      if (!title) return alert('Title required');
+      var img = document.getElementById('blog-image').value.trim();
+      var file = document.getElementById('blog-file') && document.getElementById('blog-file').files[0];
+      if (file && typeof compressFile === 'function') {
+        img = await compressFile(file, 1000000);
+      }
+      if (!img) img = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=400&fit=crop';
+      var posts = getBlogPosts();
+      posts.unshift({
+        id: 'blog'+Date.now(),
+        title: title,
+        summary: document.getElementById('blog-summary').value.trim(),
+        content: document.getElementById('blog-content').value.trim(),
+        image: img,
+        date: new Date().toISOString().slice(0,10),
+        published: true,
+        category: 'News'
+      });
+      saveBlogPosts(posts);
+      document.getElementById('blog-title').value = '';
+      document.getElementById('blog-summary').value = '';
+      document.getElementById('blog-content').value = '';
+      document.getElementById('blog-image').value = '';
+      if (document.getElementById('blog-file')) document.getElementById('blog-file').value = '';
+      renderBlogAdmin();
+      alert('Post published. Open Blog page to read the full article.');
+    }
+    function toggleBlog(id) {
+      var posts = getBlogPosts();
+      var i = posts.findIndex(function(p){ return p.id===id; });
+      if (i>=0) { posts[i].published = posts[i].published === false ? true : false; saveBlogPosts(posts); }
+      renderBlogAdmin();
+    }
+    function deleteBlog(id) {
+      if (!confirm('Delete this post?')) return;
+      saveBlogPosts(getBlogPosts().filter(function(p){ return p.id!==id; }));
+      renderBlogAdmin();
+    }
+    function renderCareersAdmin() {
+      var jobs = typeof getCareers === 'function' ? getCareers() : [];
+      var el = document.getElementById('careers-admin-list');
+      if (!el) return;
+      el.innerHTML = jobs.map(function(j){
+        return '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:10px;">' +
+          '<strong>'+j.title+'</strong> — '+j.location+' ' + (j.published===false?'<em>(hidden)</em>':'') +
+          '<div style="margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="toggleCareer(\''+j.id+'\')">'+(j.published===false?'Publish':'Hide')+'</button> ' +
+          '<button class="btn btn-sm btn-danger" onclick="deleteCareer(\''+j.id+'\')">Delete</button></div></div>';
+      }).join('') || '<p>No jobs</p>';
+    }
+    function addCareer() {
+      var title = (document.getElementById('job-title').value||'').trim();
+      if (!title) return alert('Title required');
+      var jobs = getCareers();
+      jobs.unshift({
+        id: 'job'+Date.now(),
+        title: title,
+        department: document.getElementById('job-dept').value.trim(),
+        location: document.getElementById('job-loc').value.trim(),
+        description: document.getElementById('job-desc').value.trim(),
+        published: true
+      });
+      saveCareers(jobs);
+      renderCareersAdmin();
+      alert('Job published on Careers page');
+    }
+    function toggleCareer(id) {
+      var jobs = getCareers();
+      var i = jobs.findIndex(function(j){ return j.id===id; });
+      if (i>=0) { jobs[i].published = jobs[i].published === false ? true : false; saveCareers(jobs); }
+      renderCareersAdmin();
+    }
+    function deleteCareer(id) {
+      if (!confirm('Delete job?')) return;
+      saveCareers(getCareers().filter(function(j){ return j.id!==id; }));
+      renderCareersAdmin();
+    }
+    function loadSettingsForm() {
+      if (typeof getSettings !== 'function') return;
+      var s = getSettings();
+      var map = { 'set-phone': s.phone, 'set-email': s.email, 'set-delivery': s.delivery, 'set-announce': s.announce, 'set-address': s.address };
+      Object.keys(map).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el && map[id] != null) el.value = map[id];
+      });
+      var ao = document.getElementById('set-announce-on');
+      if (ao) ao.checked = s.announceOn !== false;
+      var m = document.getElementById('set-maint');
+      if (m) m.checked = !!s.maintenance;
+    }
+
+    // Account email demo on register - hook note in outbox already for orders
+    renderOverview();
+    renderVendors();
+    renderProducts('pending');
+    renderUsers();
+    renderOrders();
+  </script>
+</body>
+</html>

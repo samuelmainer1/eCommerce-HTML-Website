@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Dashboard | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .admin-shell { max-width: 1400px; margin: 0 auto; padding: 28px 5% 60px; }
+    .admin-shell h1 { margin: 0 0 4px; font-size: 2rem; }
+    .admin-sub { color: #888; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <div class="admin-shell">
+    <h1>Vendor Dashboard</h1>
+    <p class="admin-sub" id="vendor-signed">Signed in as Vendor</p>
+
+    <div class="admin-pills" id="vendor-pills">
+      <button type="button" class="active" data-sec="overview">Overview</button>
+      <button type="button" data-sec="products">My Products <span class="badge" id="badge-pending">0</span></button>
+      <button type="button" data-sec="orders">Orders</button>
+      <button type="button" data-sec="sales">Sales</button>
+      <button type="button" data-sec="profile">Shop profile</button>
+      <button type="button" data-sec="post" onclick="location.href='post-product.html'">+ Post product</button>
+    </div>
+
+    <div id="section-overview">
+      <div class="stat-cards-row" id="stats"></div>
+      <p style="color:#666;font-size:0.9rem;margin-top:12px;">Products stay <strong>pending</strong> until admin approves them. Only approved products appear in the shop.</p>
+    </div>
+
+    <div id="section-products" class="hidden">
+      <div class="sub-tabs" id="prod-tabs">
+        <button type="button" class="active" data-filter="all">All</button>
+        <button type="button" data-filter="pending">Pending</button>
+        <button type="button" data-filter="approved">Approved</button>
+        <button type="button" data-filter="rejected">Rejected</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Category</th><th>Actions</th></tr></thead>
+          <tbody id="products-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="section-orders" class="hidden">
+      <p style="font-size:0.9rem;color:#666;margin-bottom:12px;">Orders that include your products. Only admin updates tracking.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Your items</th><th>Your total</th><th>Status</th><th>Tracking</th></tr></thead>
+          <tbody id="orders-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="section-sales" class="hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Units sold</th><th>Revenue</th></tr></thead>
+          <tbody id="sales-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="section-profile" class="hidden">
+      <h2>Shop profile</h2>
+      <div class="form-group"><label>Shop name</label><input id="pf-shop" style="width:100%;"></div>
+      <div class="form-group"><label>Contact name</label><input id="pf-name" style="width:100%;"></div>
+      <div class="form-group"><label>Phone</label><input id="pf-phone" style="width:100%;"></div>
+      <button type="button" class="btn btn-accent" onclick="saveProfile()">Save profile</button>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+  <script src="../js/data.js"></script>
+  <script src="../js/toast.js"></script>
+  <script src="../js/features.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/header.js"></script>
+  <script src="../js/footer.js"></script>
+  <script>
+    const user = getCurrentUser();
+    if (!user || user.role !== 'vendor') {
+      alert('Please login as a vendor');
+      location.href = 'login.html';
+    }
+    document.getElementById('vendor-signed').textContent =
+      'Signed in as ' + (user.shopName || user.name || 'Vendor') + ' · ' + (user.email || '');
+
+    function showSection(name) {
+      document.querySelectorAll('[id^="section-"]').forEach(function (el) { el.classList.add('hidden'); });
+      var sec = document.getElementById('section-' + name);
+      if (sec) sec.classList.remove('hidden');
+      document.querySelectorAll('#vendor-pills button[data-sec]').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sec') === name);
+      });
+    }
+    document.getElementById('vendor-pills').addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-sec]');
+      if (!btn || btn.getAttribute('data-sec') === 'post') return;
+      showSection(btn.getAttribute('data-sec'));
+    });
+
+    var prodFilter = 'all';
+    document.getElementById('prod-tabs').addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      prodFilter = btn.getAttribute('data-filter');
+      document.querySelectorAll('#prod-tabs button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderProducts();
+    });
+
+    function myProducts() {
+      return getProducts().filter(function (p) { return p.vendorId === user.id; });
+    }
+
+    function renderOverview() {
+      var products = myProducts();
+      var approved = products.filter(function (p) { return p.status === 'approved'; }).length;
+      var pending = products.filter(function (p) { return p.status === 'pending'; }).length;
+      var sales = typeof getVendorSales === 'function' ? getVendorSales(user.id) : { units: 0, revenue: 0 };
+      document.getElementById('badge-pending').textContent = pending;
+      document.getElementById('stats').innerHTML =
+        '<div class="stat-card-modern"><div class="label">My products</div><div class="value">' + products.length + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Approved</div><div class="value">' + approved + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Pending approval</div><div class="value">' + pending + '</div></div>' +
+        '<div class="stat-card-modern"><div class="label">Revenue</div><div class="value">' + formatPrice(sales.revenue || 0) + '</div></div>';
+    }
+
+    function renderProducts() {
+      var list = myProducts();
+      if (prodFilter !== 'all') list = list.filter(function (p) { return p.status === prodFilter; });
+      document.getElementById('products-table').innerHTML = list.length ? list.map(function (p) {
+        return '<tr><td style="display:flex;align-items:center;gap:10px;"><img src="' + (p.image || '') + '" width="40" height="40" style="object-fit:cover;border-radius:6px;">' + p.title + '</td>' +
+          '<td>' + formatPrice(p.price) + '</td><td>' + (p.stock || 0) + '</td>' +
+          '<td><span class="status status-' + p.status + '">' + p.status + '</span></td><td>' + (p.category || '') + '</td>' +
+          '<td><a class="btn btn-sm btn-outline" href="edit-product.html?id=' + p.id + '">Edit</a></td></tr>';
+      }).join('') : '<tr><td colspan="6">No products in this filter. <a href="post-product.html">Post a product</a></td></tr>';
+    }
+
+    function renderOrders() {
+      var orders = typeof getOrdersForVendor === 'function' ? getOrdersForVendor(user.id) : [];
+      if (!orders.length) {
+        // fallback: scan all orders
+        orders = (typeof getOrders === 'function' ? getOrders() : []).map(function (o) {
+          var items = (o.items || []).filter(function (it) {
+            var p = getProductById(it.id || it.productId);
+            return p && p.vendorId === user.id;
+          });
+          if (!items.length) return null;
+          var total = items.reduce(function (s, it) { return s + (it.price || 0) * (it.qty || 1); }, 0);
+          return Object.assign({}, o, { vendorItems: items, vendorTotal: total });
+        }).filter(Boolean);
+      }
+      document.getElementById('orders-table').innerHTML = orders.length ? orders.map(function (o) {
+        var items = (o.vendorItems || o.items || []).map(function (i) { return (i.title || i.name || i.id) + ' ×' + (i.qty || 1); }).join(', ');
+        return '<tr><td>' + o.id + '<br><small>' + (o.date || '') + '</small></td><td style="font-size:0.85rem;">' + items + '</td>' +
+          '<td>' + formatPrice(o.vendorTotal || o.total || 0) + '</td>' +
+          '<td><span class="order-status ' + o.status + '">' + o.status + '</span></td>' +
+          '<td style="font-size:0.85rem;">' + (o.trackingNumber || '—') +
+          '<br><a href="../invoice.html?id=' + o.id + '" style="color:#0a7a3c;font-size:0.78rem;">Invoice</a></td></tr>';
+      }).join('') : '<tr><td colspan="5">No orders yet</td></tr>';
+    }
+
+    function renderSales() {
+      var products = myProducts();
+      var rows = products.map(function (p) {
+        var units = 0, revenue = 0;
+        (typeof getOrders === 'function' ? getOrders() : []).forEach(function (o) {
+          (o.items || []).forEach(function (it) {
+            if ((it.id || it.productId) === p.id) {
+              units += (it.qty || 1);
+              revenue += (it.price || p.price || 0) * (it.qty || 1);
+            }
+          });
+        });
+        return { p: p, units: units, revenue: revenue };
+      }).sort(function (a, b) { return b.revenue - a.revenue; });
+      document.getElementById('sales-table').innerHTML = rows.length ? rows.map(function (r) {
+        return '<tr><td>' + r.p.title + '</td><td>' + r.units + '</td><td>' + formatPrice(r.revenue) + '</td></tr>';
+      }).join('') : '<tr><td colspan="3">No sales yet</td></tr>';
+    }
+
+    function loadProfile() {
+      document.getElementById('pf-shop').value = user.shopName || '';
+      document.getElementById('pf-name').value = user.name || '';
+      document.getElementById('pf-phone').value = user.phone || '';
+    }
+    function saveProfile() {
+      var vendors = getVendors();
+      var i = vendors.findIndex(function (v) { return v.id === user.id; });
+      if (i >= 0) {
+        vendors[i].shopName = document.getElementById('pf-shop').value.trim();
+        vendors[i].name = document.getElementById('pf-name').value.trim();
+        vendors[i].phone = document.getElementById('pf-phone').value.trim();
+        saveVendors(vendors);
+        user.shopName = vendors[i].shopName;
+        user.name = vendors[i].name;
+        user.phone = vendors[i].phone;
+        setCurrentUser(user);
+        if (typeof showToast === 'function') showToast('Profile saved', 'success');
+        else alert('Profile saved');
+      }
+    }
+
+    // Enhance showSection to load data
+    var _show = showSection;
+    showSection = function (name) {
+      _show(name);
+      if (name === 'products') renderProducts();
+      if (name === 'orders') renderOrders();
+      if (name === 'sales') renderSales();
+      if (name === 'profile') loadProfile();
+    };
+
+    renderOverview();
+    renderProducts();
+    renderOrders();
+    renderSales();
+    loadProfile();
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Product | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="form-container" style="max-width:560px;">
+    <h1>Post a New Product</h1>
+    <p style="text-align:center; color:#666; margin-bottom:20px;">Products require admin approval before appearing in the store.</p>
+    <div id="alert"></div>
+    <form id="product-form">
+      <div class="form-group">
+        <label>Product Title</label>
+        <input type="text" id="title" required placeholder="e.g. Samsung Galaxy A16 128GB">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="category" required>
+          <option value="">Select category</option>
+          <option>Phones</option>
+          <option>TVs</option>
+          <option>Electronics</option>
+          <option>Fashion</option>
+          <option>Home</option>
+          <option>Beauty</option>
+          <option>Food</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (KSh)</label>
+        <input type="number" id="price" required min="1">
+      </div>
+      <div class="form-group">
+        <label>Old Price (optional, for discount)</label>
+        <input type="number" id="oldPrice" min="0">
+      </div>
+      <div class="form-group">
+        <label>Stock Quantity</label>
+        <input type="number" id="stock" required min="1" value="10">
+      </div>
+      <div class="form-group">
+        <label>Product images (up to 3) — upload file or paste URL</label>
+        <div style="display:grid;gap:10px;">
+          <div><input type="file" id="img-file-1" accept="image/*"><input type="text" id="img-url-1" placeholder="or image URL 1" style="width:100%;margin-top:4px;"></div>
+          <div><input type="file" id="img-file-2" accept="image/*"><input type="text" id="img-url-2" placeholder="or image URL 2" style="width:100%;margin-top:4px;"></div>
+          <div><input type="file" id="img-file-3" accept="image/*"><input type="text" id="img-url-3" placeholder="or image URL 3" style="width:100%;margin-top:4px;"></div>
+        </div>
+        <small style="color:#777;font-size:0.8rem;">Images are compressed in the browser for faster loading. Max 3.</small>
+      </div>
+      <input type="hidden" id="image">
+      <input type="hidden" id="images-extra">
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" placeholder="Brief product description..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-accent" style="width:100%">Submit for Approval</button>
+    </form>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+
+    function compressImageFile(file) {
+      return new Promise(function(resolve) {
+        if (!file) return resolve('');
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var max = 800;
+            var w = img.width, h = img.height;
+            if (w > max || h > max) {
+              if (w > h) { h = Math.round(h * max / w); w = max; }
+              else { w = Math.round(w * max / h); h = max; }
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.72));
+          };
+          img.onerror = function() { resolve(''); };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    async function collectImages() {
+      var urls = [];
+      for (var i = 1; i <= 3; i++) {
+        var fileInput = document.getElementById('img-file-' + i);
+        var urlInput = document.getElementById('img-url-' + i);
+        var file = fileInput && fileInput.files && fileInput.files[0];
+        if (file) {
+          var data = await compressImageFile(file);
+          if (data) urls.push(data);
+        } else if (urlInput && urlInput.value.trim()) {
+          urls.push(urlInput.value.trim());
+        }
+      }
+      if (!urls.length) urls = ['https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400&h=400&fit=crop'];
+      return urls;
+    }
+
+    const user = getCurrentUser();
+    if (!user || user.role !== 'vendor') {
+      alert('Please login as a vendor');
+      location.href = 'login.html';
+    }
+
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      window.__productImages = await collectImages();
+      const product = {
+        id: generateId('p'),
+        title: document.getElementById('title').value.trim(),
+        category: document.getElementById('category').value,
+        price: +document.getElementById('price').value,
+        oldPrice: +document.getElementById('oldPrice').value || null,
+        stock: +document.getElementById('stock').value,
+        image: window.__productImages[0],
+        images: window.__productImages,
+        description: document.getElementById('description').value.trim() || 'Quality product available on BigDrop Kenya.',
+        vendorId: user.id,
+        status: 'pending',
+        rating: 0,
+        reviews: 0
+      };
+      addProduct(product);
+      document.getElementById('alert').innerHTML = '<div class="alert alert-success">Product submitted! Waiting for admin approval.</div>';
+      document.getElementById('product-form').reset();
+      setTimeout(() => location.href = 'dashboard.html', 1200);
+    });
+  </script>
+  <script src="../js/header.js"></script>
+  <div id="site-footer"></div>
+  <script src="../js/footer.js"></script>
+</body>
+</html>

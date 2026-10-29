@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Registration | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="form-container">
+    <h1>Sell on BigDrop</h1>
+    <p class="text-center" style="margin-bottom:20px; color:#666;">Create your vendor account and start selling</p>
+    <div id="alert"></div>
+    <form id="reg-form">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="name" required>
+      </div>
+      <div class="form-group">
+        <label>Shop Name</label>
+        <input type="text" id="shopName" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="tel" id="phone" required placeholder="07XXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-accent" style="width:100%">Create Account</button>
+    </form>
+    <p class="text-center mt-20" style="font-size:0.9rem;">
+      Already have an account? <a href="login.html" style="color:var(--primary)">Vendor Login</a>
+    </p>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    document.getElementById('reg-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      if (getVendorByEmail(email) || getUsers().find(u => u.email === email)) {
+        document.getElementById('alert').innerHTML = '<div class="alert alert-error">Email already registered</div>';
+        return;
+      }
+      const vendor = {
+        id: generateId('v'),
+        name: document.getElementById('name').value.trim(),
+        shopName: document.getElementById('shopName').value.trim(),
+        email,
+        phone: document.getElementById('phone').value.trim(),
+        password: document.getElementById('password').value,
+        status: 'pending',
+        joined: new Date().toISOString().slice(0, 10)
+      };
+      addVendor(vendor);
+      try {
+        var mails = JSON.parse(localStorage.getItem('bd_outbox')||'[]');
+        mails.unshift({ type:'welcome', to: email, subject: 'Welcome to BigDrop Kenya', at: new Date().toLocaleString() });
+        localStorage.setItem('bd_outbox', JSON.stringify(mails));
+      } catch(e) {}
+      const vUser = { ...vendor, role: 'vendor' };
+      setCurrentUser(vUser);
+      document.getElementById('alert').innerHTML = '<div class="alert alert-success">Account created! Redirecting...</div>';
+      setTimeout(() => window.location.href = 'dashboard.html', 800);
+    });
+  </script>
+  <script src="../js/header.js"></script>
+  <div id="site-footer"></div>
+  <script src="../js/footer.js"></script>
+</body>
+</html>

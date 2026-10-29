@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .product-detail {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+      background: #fff; border-radius: 12px; padding: 30px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 30px;
+    }
+    .product-detail-img { background: #f5f5f5; border-radius: 10px; overflow: hidden; aspect-ratio: 1; }
+    .product-detail-img img { width: 100%; height: 100%; object-fit: cover; }
+    .product-detail-info h1 { font-size: 1.5rem; margin-bottom: 8px; line-height: 1.3; }
+    .product-detail-price { font-size: 1.7rem; font-weight: 800; }
+    .product-detail-old { font-size: 1rem; color: #999; text-decoration: line-through; margin-left: 10px; }
+    .product-detail-discount {
+      display: inline-block; background: #f68b1e; color: #fff; font-size: 0.85rem;
+      font-weight: 700; padding: 3px 10px; border-radius: 4px; margin-left: 8px;
+    }
+    .product-detail-rating { color: #666; margin: 8px 0 12px; font-size: 0.95rem; }
+    .product-detail-desc { color: #555; line-height: 1.7; margin-bottom: 16px; font-size: 0.95rem; }
+    .product-detail-meta { font-size: 0.9rem; color: #777; margin-bottom: 16px; }
+    .product-detail-meta span { display: block; margin-bottom: 5px; }
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .qty-row input { width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-add-large, .btn-buy-now {
+      border: none; padding: 14px 28px; border-radius: 8px; font-size: 1rem;
+      font-weight: 700; cursor: pointer; flex: 1; min-width: 140px;
+    }
+    .btn-add-large { background: #f68b1e; color: #fff; }
+    .btn-add-large:hover { background: #e07b10; }
+    .btn-buy-now { background: #067d62; color: #fff; }
+    .btn-buy-now:hover { background: #055a48; }
+    .recommend-section { margin-top: 20px; }
+    .recommend-section h2 { font-size: 1.2rem; margin-bottom: 14px; }
+    @media (max-width: 768px) {
+      .product-detail { grid-template-columns: 1fr; gap: 20px; padding: 16px; }
+    }
+  
+    .img-zoom-wrap { position: relative; overflow: hidden; border-radius: 10px; cursor: zoom-in; }
+    .img-zoom-wrap img { transition: transform 0.3s; width: 100%; height: 100%; object-fit: cover; }
+    .img-zoom-wrap:hover img { transform: scale(1.4); }
+    .variant-btn {
+      display: inline-block; padding: 8px 14px; margin: 4px 6px 4px 0; border: 2px solid #ddd;
+      border-radius: 8px; background: #fff; cursor: pointer; font-size: 0.9rem;
+    }
+    .variant-btn.active { border-color: #f68b1e; background: #fff8f0; font-weight: 600; }
+    </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div id="not-found" class="empty-state" style="display:none;">
+      <div class="icon">🔍</div>
+      <h2>Product not found</h2>
+      <a href="index.html" class="btn btn-accent" style="margin-top:12px;display:inline-block;">Back to Shop</a>
+    </div>
+
+    <div id="product-content" style="display:none;">
+      <div class="breadcrumbs" id="breadcrumbs"></div>
+      <div class="product-detail">
+        <div>
+          <div class="product-detail-img img-zoom-wrap" id="zoom-wrap">
+            <img id="pd-image" src="" alt="">
+          </div>
+          <div id="pd-gallery" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
+        </div>
+        <div class="product-detail-info">
+          <h1 id="pd-title"></h1>
+          <div class="product-detail-rating" id="pd-rating"></div>
+          <div id="pd-variants" style="margin:12px 0;"></div>
+          <div>
+            <span class="product-detail-price" id="pd-price"></span>
+            <span class="product-detail-old" id="pd-old"></span>
+            <span class="product-detail-discount" id="pd-discount" style="display:none;"></span>
+          </div>
+          <ul class="feature-bullets" id="pd-features"></ul>
+          <div class="delivery-estimate" id="pd-delivery"></div>
+          <div class="product-detail-desc" id="pd-desc"></div>
+          <div class="product-detail-meta">
+            <span id="pd-category"></span>
+            <span id="pd-stock"></span>
+            <span id="pd-vendor"></span>
+          </div>
+          <div class="qty-row">
+            <label><strong>Qty:</strong></label>
+            <input type="number" id="pd-qty" value="1" min="1" max="99">
+            <button class="wishlist-btn" id="pd-wish" onclick="toggleDetailWish()" style="position:static;width:auto;padding:6px 12px;border-radius:6px;">♡ Wishlist</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn-add-large" onclick="addFromDetail()">Add to Cart</button>
+            <button class="btn-buy-now" onclick="buyNow()">Buy Now</button>
+            <button type="button" class="btn btn-outline" onclick="shareProduct(product.title, location.href)" style="flex:1;min-width:120px;">Share</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="reviews-section">
+        <h2 style="margin-bottom:16px;">Customer Reviews</h2>
+        <div id="reviews-list"></div>
+      </div>
+
+      <div class="reviews-section">
+        <h2 style="margin-bottom:16px;">Customer Questions & Answers</h2>
+        <div id="qa-list"></div>
+      </div>
+
+      <div class="recommend-section">
+        <h2>Customers also bought</h2>
+        <div class="product-grid" id="also-bought"></div>
+      </div>
+      <div class="recommend-section" style="margin-top:28px;">
+        <h2>You may also like</h2>
+        <div class="product-grid" id="also-like"></div>
+      </div>
+      <div class="recommend-section" style="margin-top:28px;" id="recent-section">
+        <h2>Recently viewed</h2>
+        <div class="product-grid" id="recent-products"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="sticky-cart-bar" id="sticky-bar">
+    <div><strong id="sticky-price"></strong></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="addFromDetail()">Add to Cart</button>
+      <button class="btn btn-accent btn-sm" onclick="buyNow()">Buy Now</button>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+    <script src="js/app.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/polish.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('id');
+    const product = getProductById(productId);
+
+    if (!product || product.status !== 'approved') {
+      document.getElementById('not-found').style.display = 'block';
+    } else {
+      document.getElementById('product-content').style.display = 'block';
+      document.title = product.title + ' | BigDrop Kenya';
+      addRecent(product.id);
+
+      
+
+      document.getElementById('breadcrumbs').innerHTML =
+        '<a href="index.html">Home</a> › <a href="index.html?cat=' + encodeURIComponent(product.category) + '">' + product.category + '</a> › ' + product.title;
+
+      document.getElementById('pd-image').src = product.image;
+      document.getElementById('pd-image').alt = product.title;
+
+      // Variants
+      let selectedVariant = null;
+      const variants = product.variants || [];
+      if (variants.length) {
+        document.getElementById('pd-variants').innerHTML = '<strong style="display:block;margin-bottom:8px;">Options</strong>' +
+          variants.map(function(v, i) {
+            return '<button type="button" class="variant-btn' + (i===0?' active':'') + '" data-i="' + i + '">' + v.label + ' · ' + formatPrice(v.price) + '</button>';
+          }).join('');
+        selectedVariant = variants[0];
+        document.getElementById('pd-price').textContent = formatPrice(selectedVariant.price);
+        document.getElementById('sticky-price').textContent = formatPrice(selectedVariant.price);
+        document.getElementById('pd-variants').querySelectorAll('.variant-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.variant-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            selectedVariant = variants[+this.getAttribute('data-i')];
+            document.getElementById('pd-price').textContent = formatPrice(selectedVariant.price);
+            document.getElementById('sticky-price').textContent = formatPrice(selectedVariant.price);
+          });
+        });
+      }
+
+      // Gallery with zoom
+      const imgs = (typeof getProductImages === 'function' ? getProductImages(product) : [product.image]);
+      const gEl = document.getElementById('pd-gallery');
+      if (gEl) {
+        gEl.innerHTML = imgs.map(function(src, i) {
+          return '<img src="' + src + '" data-src="' + src + '" style="width:64px;height:64px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ' + (i===0?'#f68b1e':'#ddd') + ';">';
+        }).join('');
+        gEl.querySelectorAll('img').forEach(function(img) {
+          img.addEventListener('click', function() {
+            document.getElementById('pd-image').src = this.getAttribute('data-src');
+            gEl.querySelectorAll('img').forEach(function(im) { im.style.borderColor = '#ddd'; });
+            this.style.borderColor = '#f68b1e';
+          });
+        });
+      }
+      window.__selectedVariant = function() { return selectedVariant; };
+
+      document.getElementById('pd-title').textContent = product.title;
+      document.getElementById('pd-rating').textContent = '★ ' + (product.rating || 4.0) + ' (' + (product.reviews || 0) + ' reviews)';
+      document.getElementById('pd-price').textContent = formatPrice(product.price);
+      document.getElementById('sticky-price').textContent = formatPrice(product.price);
+
+      if (product.oldPrice) {
+        document.getElementById('pd-old').textContent = formatPrice(product.oldPrice);
+        const disc = Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100);
+        const discEl = document.getElementById('pd-discount');
+        discEl.textContent = '-' + disc + '%';
+        discEl.style.display = 'inline-block';
+      }
+
+      // Key features
+      document.getElementById('pd-features').innerHTML = getKeyFeatures(product).map(f => '<li>' + f + '</li>').join('');
+
+      // Delivery estimate
+      document.getElementById('pd-delivery').innerHTML = '🚚 <strong>Get it by ' + getDeliveryEstimate() + '</strong> · Delivery across Kenya · Pay on Delivery available';
+
+      const longDesc = product.description + (product.description.endsWith('.') ? ' ' : '. ') +
+        'This item is carefully selected for quality and value. Order today and enjoy fast delivery across Kenya. All products sold on BigDrop are from verified vendors.';
+      document.getElementById('pd-desc').textContent = longDesc;
+
+      document.getElementById('pd-category').textContent = 'Category: ' + product.category;
+      document.getElementById('pd-stock').textContent = product.stock > 10
+        ? 'In stock (' + product.stock + ' available)'
+        : product.stock > 0 ? 'Only ' + product.stock + ' left – order soon!' : 'Out of stock';
+
+      const vendor = getVendorById(product.vendorId);
+      if (vendor) {
+        document.getElementById('pd-vendor').innerHTML = 'Sold by: <a href="vendor-page.html?id=' + vendor.id + '" style="color:#f68b1e;font-weight:600;">' + vendor.shopName + '</a>';
+      } else {
+        document.getElementById('pd-vendor').textContent = 'Sold by: BigDrop';
+      }
+
+      if (isInWishlist(product.id)) {
+        const btn = document.getElementById('pd-wish');
+        btn.classList.add('active');
+        btn.textContent = '♥ Wishlist';
+      }
+
+      // Reviews
+      document.getElementById('reviews-list').innerHTML = getProductReviews(product.id).map(r =>
+        '<div class="review-item"><div class="review-header"><strong>' + r.name + '</strong><span class="review-stars">' + '★'.repeat(r.rating) + '</span></div><div style="font-size:0.85rem;color:#999;margin-bottom:6px;">' + r.date + '</div><p style="color:#444;">' + r.comment + '</p></div>'
+      ).join('');
+
+      // Q&A sample
+      const qas = [
+        { q: 'Is this product genuine?', a: 'Yes. All products on BigDrop are from verified vendors and are 100% genuine.' },
+        { q: 'How long is delivery to Nairobi?', a: 'Most Nairobi orders arrive within 1–3 business days.' },
+        { q: 'Can I pay on delivery?', a: 'Yes, Cash on Delivery is available on selected orders and locations.' }
+      ];
+      document.getElementById('qa-list').innerHTML = qas.map(qa =>
+        '<div class="qa-item"><div class="qa-q">Q: ' + qa.q + '</div><div class="qa-a">A: ' + qa.a + '</div></div>'
+      ).join('');
+
+      // Recommendations
+      const all = getApprovedProducts().filter(p => p.id !== product.id);
+      const sameCat = all.filter(p => p.category === product.category);
+      const others = all.filter(p => p.category !== product.category);
+      const alsoBought = sameCat.slice(0, 2).concat(others.sort((a,b) => (b.reviews||0)-(a.reviews||0)).slice(0, 2)).slice(0, 4);
+      const alsoLike = (sameCat.length >= 4 ? sameCat : sameCat.concat(others)).slice(0, 4);
+      renderProducts('also-bought', alsoBought);
+      renderProducts('also-like', alsoLike);
+
+      const recent = getRecentProducts().filter(p => p.id !== product.id).slice(0, 4);
+      if (recent.length) renderProducts('recent-products', recent);
+      else document.getElementById('recent-section').style.display = 'none';
+    }
+
+    function addFromDetail() {
+      const qty = Math.max(1, parseInt(document.getElementById('pd-qty').value) || 1);
+      addToCart(productId, qty);
+      showToast('Added ' + qty + ' item(s) to cart!', 'success');
+      if (typeof openMiniCart === 'function') openMiniCart();
+    }
+
+    function buyNow() {
+      const qty = Math.max(1, parseInt(document.getElementById('pd-qty').value) || 1);
+      addToCart(productId, qty);
+      window.location.href = 'cart.html';
+    }
+
+    function toggleDetailWish() {
+      const added = toggleWishlist(productId);
+      const btn = document.getElementById('pd-wish');
+      btn.classList.toggle('active', added);
+      btn.textContent = added ? '♥ Wishlist' : '♡ Wishlist';
+      showToast(added ? 'Added to wishlist' : 'Removed from wishlist', 'info');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container">
+    <h1 style="margin-bottom: 20px;">Your Cart</h1>
+    <div id="cart-empty" class="text-center" style="display:none; padding: 40px;">
+      <p style="font-size: 1.2rem; margin-bottom: 16px;">Your cart is empty</p>
+      <a href="index.html" class="btn btn-accent">Continue Shopping</a>
+    </div>
+
+    <div id="cart-content" style="display: grid; grid-template-columns: 1fr 320px; gap: 24px;">
+      <div id="cart-items"></div>
+      <div class="cart-summary">
+        <h3 style="margin-bottom: 16px;">Order Summary</h3>
+        <div class="flex-between" style="margin-bottom: 8px;">
+          <span>Subtotal</span>
+          <strong id="subtotal">KSh 0</strong>
+        </div>
+        <div class="flex-between" style="margin-bottom: 8px;">
+          <span>Delivery</span>
+          <span id="cart-delivery-fee">KSh 290</span>
+        </div>
+        <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
+        <div class="flex-between" style="margin-bottom: 20px; font-size: 1.1rem;">
+          <strong>Total</strong>
+          <strong id="total">KSh 0</strong>
+        </div>
+        <button class="btn btn-accent" style="width:100%" onclick="location.href='checkout.html'">Proceed to Checkout</button>
+        <p style="font-size: 0.8rem; color: #777; margin-top: 12px; text-align:center;">
+          This is a demo. No real payment is processed.
+        </p>
+      </div>
+    </div>
+
+    <!-- Recommended products to encourage more purchases -->
+    <div style="margin-top: 48px;">
+      <h2 style="font-size: 1.25rem; margin-bottom: 18px;">Frequently bought together</h2>
+      <div class="product-grid" id="cart-recommendations"></div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+    <script src="js/app.js"></script>
+  <script>
+    function renderCart() {
+      const cart = getCart();
+      const itemsEl = document.getElementById('cart-items');
+      const emptyEl = document.getElementById('cart-empty');
+      const contentEl = document.getElementById('cart-content');
+
+      if (!cart.length) {
+        emptyEl.style.display = 'block';
+        contentEl.style.display = 'none';
+      } else {
+        emptyEl.style.display = 'none';
+        contentEl.style.display = 'grid';
+
+        let subtotal = 0;
+        itemsEl.innerHTML = cart.map(item => {
+          const p = getProductById(item.productId);
+          if (!p) return '';
+          const lineTotal = p.price * item.qty;
+          subtotal += lineTotal;
+          return `
+            <div class="cart-item">
+              <div class="cart-item-img">
+                <img src="${p.image && p.image.startsWith('http') ? p.image : 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=200&h=200&fit=crop'}" 
+                     alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">
+              </div>
+              <div class="cart-item-info">
+                <strong style="cursor:pointer;" onclick="location.href='product.html?id=${p.id}'">${p.title}</strong>
+                <div style="margin: 6px 0; color: var(--primary); font-weight: 700;">${formatPrice(p.price)}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <label>Qty:</label>
+                  <input type="number" min="1" value="${item.qty}" style="width:60px; padding:4px;"
+                    onchange="updateCartQty('${p.id}', +this.value); renderCart();">
+                  <button class="btn btn-sm btn-danger" onclick="removeFromCart('${p.id}'); renderCart();">Remove</button>
+                </div>
+              </div>
+              <div style="font-weight:700;">${formatPrice(lineTotal)}</div>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('subtotal').textContent = formatPrice(subtotal);
+        document.getElementById('total').textContent = formatPrice(subtotal + (window.__deliveryFee||290));
+      }
+
+      // Always show recommendations (even if cart is empty)
+      renderCartRecommendations(cart);
+    }
+
+    function renderCartRecommendations(cart) {
+      const cartIds = cart.map(i => i.productId);
+      const all = getApprovedProducts().filter(p => !cartIds.includes(p.id));
+
+      // Prefer complementary / popular items
+      // If cart has phones → suggest accessories/power banks/earbuds
+      // Otherwise show highly reviewed discounted items
+      let recommended = [];
+
+      const hasPhones = cart.some(i => {
+        const p = getProductById(i.productId);
+        return p && p.category === 'Phones';
+      });
+      const hasTVs = cart.some(i => {
+        const p = getProductById(i.productId);
+        return p && p.category === 'TVs';
+      });
+
+      if (hasPhones) {
+        recommended = all.filter(p => 
+          p.title.toLowerCase().includes('power') || 
+          p.title.toLowerCase().includes('earbud') || 
+          p.title.toLowerCase().includes('hub') ||
+          p.category === 'Electronics'
+        );
+      } else if (hasTVs) {
+        recommended = all.filter(p => 
+          p.title.toLowerCase().includes('stand') || 
+          p.title.toLowerCase().includes('light') ||
+          p.category === 'Home'
+        );
+      }
+
+      if (recommended.length < 4) {
+        // Fill with popular discounted items
+        const popular = all
+          .filter(p => p.oldPrice)
+          .sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+        recommended = [...recommended, ...popular].slice(0, 4);
+      }
+
+      // Final fallback
+      if (recommended.length < 4) {
+        recommended = all.sort((a, b) => (b.reviews || 0) - (a.reviews || 0)).slice(0, 4);
+      }
+
+      renderProducts('cart-recommendations', recommended.slice(0, 4));
+    }
+
+    function checkout() {
+      const user = getCurrentUser();
+      if (!user || user.role === 'vendor' || user.role === 'admin') {
+        showToast('Please login as a customer to checkout', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1200);
+        return;
+      }
+      const cart = getCart();
+      if (!cart.length) return;
+      const total = cart.reduce((s, i) => {
+        const p = getProductById(i.productId);
+        return s + (p ? p.price * i.qty : 0);
+      }, 0) + (window.__deliveryFee||290);
+      const order = {
+        id: 'BD-' + Date.now().toString(36).toUpperCase(),
+        trackingNumber: typeof generateTrackingNumber === 'function' ? generateTrackingNumber() : ('TRK' + Date.now()),
+        date: new Date().toLocaleDateString('en-KE', { year:'numeric', month:'short', day:'numeric' }),
+        items: cart.slice(),
+        total: total,
+        status: 'ordered',
+        customerEmail: user.email,
+        customerName: user.name || 'Customer',
+        history: [{ status: 'ordered', at: new Date().toLocaleString('en-KE'), by: 'system' }]
+      };
+      try { sessionStorage.setItem('lastOrderId', order.id); sessionStorage.setItem('lastTracking', order.trackingNumber); } catch(e) {}
+      if (typeof saveOrder === 'function') saveOrder(order);
+      clearCart();
+      window.location.href = 'order-success.html';
+    }
+
+    renderCart();
+  </script>
+  <script src="js/header.js"></script>
+  <script src="js/polish.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>

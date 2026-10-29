@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Order | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container" style="max-width:640px; padding:40px 5%;">
+    <h1 style="margin-bottom:20px;">Track Your Order</h1>
+    <form id="track-form" style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);margin-bottom:24px;" onsubmit="event.preventDefault(); lookup();">
+      <div class="form-group">
+        <label>Order ID or Tracking Number</label>
+        <input type="text" id="track-input" required placeholder="e.g. BD-XXXX or BDTRK...">
+      </div>
+      <button type="submit" class="btn btn-accent" style="width:100%;">Track</button>
+    </form>
+    <div id="track-result"></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    if (params.get('id')) {
+      document.getElementById('track-input').value = params.get('id');
+      lookup();
+    }
+    function lookup() {
+      const q = document.getElementById('track-input').value.trim();
+      const order = getOrderById(q);
+      const el = document.getElementById('track-result');
+      if (!order) {
+        el.innerHTML = '<div class="alert alert-error">No order found. Check your Order ID or Tracking Number.</div>';
+        return;
+      }
+      const steps = ['ordered', 'processing', 'shipped', 'delivered'];
+      const labels = { ordered: 'Order Placed', processing: 'Processing', shipped: 'Shipped', delivered: 'Delivered' };
+      const cur = steps.indexOf(order.status);
+      let timeline = '<div style="display:flex;justify-content:space-between;margin:24px 0;flex-wrap:wrap;gap:8px;">';
+      steps.forEach((s, i) => {
+        const active = i <= cur;
+        timeline += '<div style="text-align:center;flex:1;min-width:70px;"><div style="width:28px;height:28px;border-radius:50%;margin:0 auto 6px;background:' + (active?'#067d62':'#ddd') + ';color:#fff;line-height:28px;font-size:0.8rem;">' + (active?'✓':(i+1)) + '</div><div style="font-size:0.75rem;color:' + (active?'#067d62':'#999') + ';">' + labels[s] + '</div></div>';
+      });
+      timeline += '</div>';
+      el.innerHTML = '<div class="order-card"><div class="flex-between"><strong>Order ' + order.id + '</strong><span class="order-status ' + order.status + '">' + (order.status||'') + '</span></div><p style="margin:10px 0;font-size:0.9rem;color:#666;">Tracking: <strong>' + (order.trackingNumber||'—') + '</strong><br>Placed: ' + order.date + '<br>Total: ' + formatPrice(order.total) + '</p>' + timeline + '</div>';
+    }
+  </script>
+</body>
+</html>

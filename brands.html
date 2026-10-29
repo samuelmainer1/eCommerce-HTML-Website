@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brands | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="breadcrumbs"><a href="index.html">Home</a> › Brands</div>
+    <h1 style="margin-bottom:8px;">Shop by Brand</h1>
+    <p style="color:#666;margin-bottom:28px;">Popular brands available on BigDrop Kenya.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;" id="brands-grid"></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const brands = ['Samsung','Tecno','Infinix','Apple','HP','Dell','CeraVe','Dove',"L'Oréal",'No7','Hisense','TCL','LG','Logitech','Anker','Java House'];
+    document.getElementById('brands-grid').innerHTML = brands.map(b =>
+      '<a href="shop.html?search=' + encodeURIComponent(b) + '" style="background:#fff;border:1px solid #eee;border-radius:12px;padding:28px 12px;text-align:center;text-decoration:none;color:#222;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' + b + '</a>'
+    ).join('');
+  </script>
+</body>
+</html>

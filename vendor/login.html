@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Login | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="form-container">
+    <h1>Vendor Login</h1>
+    <div id="alert"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit" class="btn btn-accent" style="width:100%">Login</button>
+    </form>
+    <p class="text-center mt-20" style="font-size:0.9rem;">
+      New seller? <a href="register.html" style="color:var(--primary)">Register here</a>
+    </p>
+    <div class="alert alert-info mt-20" style="font-size:0.85rem;">
+      Demo: vendor1@example.com / vendor123
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = login(document.getElementById('email').value.trim(), document.getElementById('password').value);
+      if (user && user.role === 'vendor') {
+        document.getElementById('alert').innerHTML = '<div class="alert alert-success">Welcome back!</div>';
+        setTimeout(() => window.location.href = 'dashboard.html', 600);
+      } else {
+        document.getElementById('alert').innerHTML = '<div class="alert alert-error">Invalid vendor credentials</div>';
+      }
+    });
+  </script>
+  <script src="../js/header.js"></script>
+  <div id="site-footer"></div>
+  <script src="../js/footer.js"></script>
+</body>
+</html>

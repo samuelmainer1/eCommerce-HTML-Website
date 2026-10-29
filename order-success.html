@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Successful | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container" style="max-width:640px; text-align:center; padding:60px 20px;">
+    <div style="font-size:4rem; margin-bottom:16px;">✅</div>
+    <h1 style="margin-bottom:12px;">Thank you for your order!</h1>
+    <p style="color:#555; margin-bottom:8px;">Your order has been placed successfully.</p>
+    <p style="color:#777; font-size:0.95rem; margin-bottom:8px;">Order ID: <strong id="order-id"></strong></p>
+    <p style="color:#777; font-size:0.95rem; margin-bottom:28px;">Tracking number: <strong id="tracking-no" style="color:#f68b1e;"></strong></p>
+    <div style="background:#f8f8f8; border-radius:10px; padding:20px; text-align:left; margin-bottom:28px;">
+      <p style="margin-bottom:8px;"><strong>What happens next?</strong></p>
+      <ul style="padding-left:20px; color:#555; line-height:1.8;">
+        <li>Save your tracking number to follow your delivery.</li>
+        <li>Our team will process and ship your order.</li>
+        <li>Expected delivery: 1–5 business days across Kenya.</li>
+      </ul>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="track.html" class="btn btn-accent" id="track-link">Track Order</a>
+      <a href="orders.html" class="btn btn-outline">My Orders</a>
+      <a href="index.html" class="btn btn-outline">Continue Shopping</a>
+    </div>
+  <p style="margin-top:16px;font-size:0.95rem;">Your <strong>invoice</strong> is available under My Orders. When the order is marked delivered, a <strong>receipt (Paid &amp; Delivered)</strong> will appear for you and admin.</p>
+  
+    <div id="guest-account-prompt" style="display:none;margin-top:24px;background:#e8f5ee;border-radius:12px;padding:20px;text-align:center;">
+      <h3 style="margin:0 0 8px;">Create an account?</h3>
+      <p style="color:#555;margin:0 0 14px;">Save your details for faster checkout next time.</p>
+      <a href="login.html" class="btn btn-accent">Create account</a>
+      <button type="button" class="btn btn-outline" style="margin-left:8px;" onclick="document.getElementById('guest-account-prompt').style.display='none'">No thanks</button>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script>
+    const oid = sessionStorage.getItem('lastOrderId') || ('BD-' + Date.now().toString(36).toUpperCase());
+    const trk = sessionStorage.getItem('lastTracking') || '—';
+    document.getElementById('order-id').textContent = oid;
+    document.getElementById('tracking-no').textContent = trk;
+    document.getElementById('track-link').href = 'track.html?id=' + encodeURIComponent(trk);
+  </script>
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+
+  <script>
+    try {
+      if (sessionStorage.getItem('guestCheckout') === '1') {
+        var el = document.getElementById('guest-account-prompt');
+        if (el) el.style.display = 'block';
+      }
+    } catch(e) {}
+  </script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .pager { display:flex; justify-content:center; align-items:center; gap:8px; margin:28px 0; flex-wrap:wrap; }
+    .pager button, .pager span {
+      min-width: 36px; height: 36px; padding: 0 10px; border: 1px solid #ddd; border-radius: 8px;
+      background: #fff; cursor: pointer; font-size: 0.9rem;
+    }
+    .pager button.active { background: #0a7a3c; color: #fff; border-color: #0a7a3c; }
+    .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+    @media(max-width:768px){ #shop-layout { grid-template-columns: 1fr !important; } }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container wide-shop">
+    <div class="breadcrumbs"><a href="index.html">Home</a> › <span id="crumb">Shop</span></div>
+    <div class="section-title">
+      <h2 id="shop-heading">All Products</h2>
+      <span id="shop-count" style="color:#777;font-size:0.9rem;"></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:24px;" id="shop-layout">
+      <aside class="filters-sidebar modern">
+        <h3>Filters</h3>
+        <div class="form-group"><label>Category</label>
+          <select id="f-cat" onchange="fillBrandOptions(); applyShop()">
+            <option value="">All</option>
+            <option>Phones</option><option>TVs</option><option>Electronics</option>
+            <option>Fashion</option><option>Home</option><option>Beauty</option><option>Food</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Brand</label>
+          <select id="f-brand" onchange="applyShop()">
+            <option value="">All brands</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Price range</label>
+          <div class="range-wrap">
+            <input type="range" id="f-price" min="0" max="100000" step="500" value="100000" oninput="updatePriceLabel(); applyShop()">
+            <div class="range-vals"><span>KSh 0</span><span id="price-label">KSh 100,000+</span></div>
+          </div>
+        </div>
+        <div class="form-group"><label>Customer rating</label>
+          <select id="f-rating" onchange="applyShop()">
+            <option value="0">Any</option>
+            <option value="4">4★ & up</option>
+            <option value="3">3★ & up</option>
+            <option value="2">2★ & up</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Sort</label>
+          <select id="f-sort" onchange="applyShop()">
+            <option value="default">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-top:8px;">
+          <input type="checkbox" id="f-deal" onchange="applyShop()"> Deals only
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-top:8px;">
+          <input type="checkbox" id="f-choice" onchange="applyShop()"> BigDrop's Choice
+        </label>
+        <button type="button" class="btn btn-sm btn-outline" style="width:100%;margin-top:14px;" onclick="clearShopFilters()">Clear filters</button>
+      </aside>
+
+      <div>
+        <div class="shop-toolbar">
+          <span id="shop-count" style="color:#666;font-size:0.9rem;"></span>
+        </div>
+        <div class="filter-chips" id="filter-chips"></div>
+        <div class="product-grid" id="shop-products"></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+    <script src="js/app.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/polish.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const PER_PAGE = 40;
+    let page = 1;
+    let filtered = [];
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('cat')) {
+      document.getElementById('f-cat').value = params.get('cat');
+      document.getElementById('shop-heading').textContent = params.get('cat') === 'Electronics' ? 'TVs & Electronics' : params.get('cat');
+      document.getElementById('crumb').textContent = document.getElementById('shop-heading').textContent;
+    }
+    if (params.get('deal') === '1') {
+      document.getElementById('f-deal').checked = true;
+      document.getElementById('shop-heading').textContent = 'Flash Deals';
+      document.getElementById('crumb').textContent = 'Flash Deals';
+    }
+    if (params.get('choice') === '1') {
+      document.getElementById('f-choice').checked = true;
+      document.getElementById('shop-heading').textContent = "BigDrop's Choice";
+    }
+    if (params.get('sort')) document.getElementById('f-sort').value = params.get('sort');
+    if (params.get('search')) {
+      document.getElementById('search-input').value = params.get('search');
+      document.getElementById('shop-heading').textContent = 'Search: "' + params.get('search') + '"';
+    }
+
+
+    function fillBrandOptions() {
+      var sel = document.getElementById('f-brand');
+      if (!sel) return;
+      var cat = (document.getElementById('f-cat') || {}).value || '';
+      var brands = [];
+      if (typeof getBrandsByCategory === 'function') {
+        brands = getBrandsByCategory(cat).map(function(b){ return b.name; });
+      } else {
+        var set = {};
+        getApprovedProducts().forEach(function(p) {
+          if (cat && p.category !== cat) return;
+          var t = (p.title||'').split(' ')[0];
+          if (t) set[t] = true;
+        });
+        brands = Object.keys(set).sort();
+      }
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All brands</option>' + brands.map(function(b){
+        return '<option value="'+b+'">'+b+'</option>';
+      }).join('');
+      if (brands.indexOf(cur) >= 0) sel.value = cur;
+    }
+    function fillCatOptions() {
+      var sel = document.getElementById('f-cat');
+      if (!sel) return;
+      var cats = ['Phones','TVs','Electronics','Fashion','Home','Beauty','Food','Furniture','Appliances','Gaming','Baby','Sports'];
+      try {
+        var saved = JSON.parse(localStorage.getItem('bd_categories')||'null');
+        if (saved && saved.length) cats = saved;
+      } catch(e) {}
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All</option>' + cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+      if (cur) sel.value = cur;
+    }
+
+    function applyShop() {
+      page = 1;
+      let list = getApprovedProducts();
+      const cat = document.getElementById('f-cat').value;
+      const deal = document.getElementById('f-deal').checked;
+      const choice = document.getElementById('f-choice').checked;
+      const sort = document.getElementById('f-sort').value;
+      const q = (params.get('search') || '').toLowerCase();
+
+      if (cat === 'Electronics') list = list.filter(p => p.category === 'Electronics' || p.category === 'TVs');
+      else if (cat) list = list.filter(p => p.category === cat);
+      var maxPrice = parseFloat((document.getElementById('f-price')||{}).value);
+      if (!isNaN(maxPrice)) list = list.filter(function(p){ return p.price <= maxPrice; });
+      var brand = (document.getElementById('f-brand')||{}).value || '';
+      if (brand) list = list.filter(function(p){ return (p.title||'').indexOf(brand) === 0 || (p.title||'').toLowerCase().indexOf(brand.toLowerCase()) >= 0; });
+      var minR = parseFloat((document.getElementById('f-rating')||{}).value) || 0;
+      if (minR) list = list.filter(function(p){ return (p.rating||0) >= minR; });
+      if (deal) list = list.filter(p => p.oldPrice);
+      if (choice) list = list.filter(p => (p.rating || 0) >= 4.5);
+      if (q) list = list.filter(p => p.title.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+
+      if (sort === 'price-asc') list.sort((a,b) => a.price - b.price);
+      else if (sort === 'price-desc') list.sort((a,b) => b.price - a.price);
+      else if (sort === 'rating') list.sort((a,b) => (b.rating||0) - (a.rating||0));
+
+      filtered = list;
+      renderChips();
+      renderPage();
+    }
+
+    function renderChips() {
+      var chips = document.getElementById('filter-chips');
+      if (!chips) return;
+      var parts = [];
+      var cat = document.getElementById('f-cat').value;
+      if (cat) parts.push({k:'cat', label: cat});
+      if (document.getElementById('f-deal').checked) parts.push({k:'deal', label: 'On deal'});
+      if (document.getElementById('f-choice') && document.getElementById('f-choice').checked) parts.push({k:'choice', label: "BigDrop's Choice"});
+      chips.innerHTML = parts.map(function(p) {
+        return '<span class="filter-chip">' + p.label + ' <button type="button" data-k="' + p.k + '">×</button></span>';
+      }).join('');
+      chips.querySelectorAll('button').forEach(function(btn) {
+        btn.onclick = function() {
+          var k = this.getAttribute('data-k');
+          if (k === 'cat') document.getElementById('f-cat').value = '';
+          if (k === 'deal') document.getElementById('f-deal').checked = false;
+          if (k === 'choice') document.getElementById('f-choice').checked = false;
+          fillBrandOptions();
+    fillCatOptions();
+    applyShop();
+        };
+      });
+    }
+    function _applyShopEnd() {
+      // placeholder
+
+    }
+
+    function renderPage() {
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+      if (page > pages) page = pages;
+      const start = (page - 1) * PER_PAGE;
+      const slice = filtered.slice(start, start + PER_PAGE);
+      document.getElementById('shop-count').textContent = total + ' product' + (total !== 1 ? 's' : '');
+      renderProducts('shop-products', slice);
+
+      let html = '<button type="button" ' + (page <= 1 ? 'disabled' : '') + ' onclick="page--;renderPage()">Prev</button>';
+      for (let i = 1; i <= pages && i <= 12; i++) {
+        html += '<button type="button" class="' + (i === page ? 'active' : '') + '" onclick="page=' + i + ';renderPage()">' + i + '</button>';
+      }
+      if (pages > 12) html += '<span>…</span><button type="button" class="' + (page === pages ? 'active' : '') + '" onclick="page=' + pages + ';renderPage()">' + pages + '</button>';
+      html += '<button type="button" ' + (page >= pages ? 'disabled' : '') + ' onclick="page++;renderPage()">Next</button>';
+      document.getElementById('pager').innerHTML = html;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    applyShop();
+  </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container" style="max-width:800px;">
+    <h1 style="margin-bottom:12px;">My Orders</h1>
+    <p style="margin-bottom:20px;"><a href="track.html" style="color:#f68b1e;font-weight:600;">Track an order with tracking number →</a></p>
+    <div id="orders-list"></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+    <script src="js/app.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/polish.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const user = getCurrentUser();
+    const el = document.getElementById('orders-list');
+    if (!user || user.role !== 'customer') {
+      el.innerHTML = '<div class="empty-state"><p>Please <a href="login.html" style="color:#f68b1e;">login as a customer</a> to see your orders.</p></div>';
+    } else {
+      const orders = getOrders().filter(o => o.customerEmail === user.email);
+      if (!orders.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>You have no orders yet.</p><a href="index.html" class="btn btn-accent" style="margin-top:12px;display:inline-block;">Start Shopping</a></div>';
+      } else {
+        el.innerHTML = orders.map(o => {
+          const itemsHtml = (o.items || []).map(i => {
+            const p = getProductById(i.productId);
+            return p ? '<div style="display:flex;gap:10px;align-items:center;margin:8px 0;"><img src="'+p.image+'" width="48" height="48" style="object-fit:cover;border-radius:4px;"><span>'+p.title+' × '+i.qty+'</span></div>' : '';
+          }).join('');
+          return '<div class="order-card"><div class="flex-between" style="margin-bottom:10px;"><strong>Order '+o.id+'</strong><span class="order-status '+(o.status||'ordered')+'">'+(o.status||'ordered')+'</span></div><div style="font-size:0.9rem;color:#666;margin-bottom:8px;">Placed: '+o.date+' · Total: '+formatPrice(o.total)+'<br>Tracking: <strong>'+(o.trackingNumber||'—')+'</strong> · <a href="track.html?id='+encodeURIComponent(o.trackingNumber||o.id)+'" style="color:#f68b1e;">Track</a> · <a href="invoice.html?id='+o.id+'" style="color:#f68b1e;">Invoice</a>' +
+          (String(o.status).toLowerCase()==='delivered' || o.hasReceipt ? ' · <a href="invoice.html?id='+o.id+'&type=receipt" style="color:#0a7a3c;font-weight:600;">Receipt (Paid & Delivered)</a>' : '') +
+        '</div>'+itemsHtml+'</div>';
+        }).join('');
+      }
+    }
+  </script>
+</body>
+</html>

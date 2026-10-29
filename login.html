@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="form-container">
+    <h1>Login</h1>
+    <div id="alert"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-accent" style="width:100%">Login</button>
+    </form>
+    <p class="text-center mt-20" style="font-size:0.9rem;">
+      Want to sell? <a href="vendor/register.html" style="color:var(--primary)">Register as Vendor</a>
+    </p>
+    <div class="alert alert-info mt-20" style="font-size:0.85rem;">
+      <strong>Demo accounts:</strong><br>
+      Admin: admin@bigdrop.co.ke / admin123<br>
+      Customer: customer@example.com / customer123<br>
+      Vendor: vendor1@example.com / vendor123
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const user = login(email, password);
+      const alertEl = document.getElementById('alert');
+
+      if (user) {
+        alertEl.innerHTML = '<div class="alert alert-success">Login successful! Redirecting...</div>';
+        setTimeout(() => {
+          if (user.role === 'admin') window.location.href = 'admin/dashboard.html';
+          else if (user.role === 'vendor') window.location.href = 'vendor/dashboard.html';
+          else window.location.href = 'index.html';
+        }, 800);
+      } else {
+        alertEl.innerHTML = '<div class="alert alert-error">Invalid email or password</div>';
+      }
+    });
+  </script>
+  <script src="js/header.js"></script>
+  <div id="site-footer"></div>
+  <script src="js/footer.js"></script>
+</body>
+</html>

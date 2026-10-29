@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .invoice { max-width: 720px; margin: 24px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .invoice-header { display: flex; justify-content: space-between; margin-bottom: 28px; border-bottom: 2px solid #f68b1e; padding-bottom: 16px; }
+    .invoice table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .invoice th, .invoice td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+    .invoice th { background: #fafafa; }
+    @media print {
+      .no-print { display: none !important; }
+      .invoice { box-shadow: none; margin: 0; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <header class="header no-print">
+    <div class="header-main">
+      <a href="index.html" class="logo"><img src="assets/logo.png" alt="BigDrop" class="logo-img" onerror="this.style.display='none'; this.parentElement.innerHTML='Big<span>Drop</span>';"></a>
+      <div class="header-actions">
+        <button class="btn btn-accent" onclick="window.print()">Print invoice</button>
+        <a href="orders.html">My Orders</a>
+      </div>
+    </div>
+  </header>
+  <div class="invoice" id="invoice">
+    <p>Loading…</p>
+  </div>
+  <script src="js/data.js"></script>
+  <script src="js/features.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    const isReceipt = params.get('type') === 'receipt';
+    const order = getOrderById(id);
+    const el = document.getElementById('invoice');
+    if (!order) {
+      el.innerHTML = '<p>Invoice not found. <a href="orders.html">Back to orders</a></p>';
+    } else {
+      const rows = (order.items || []).map(i => {
+        const p = getProductById(i.productId);
+        if (!p) return '';
+        return '<tr><td>' + p.title + '</td><td>' + i.qty + '</td><td>' + formatPrice(p.price) + '</td><td>' + formatPrice(p.price * i.qty) + '</td></tr>';
+      }).join('');
+      el.innerHTML =
+        '<div class="invoice-header"><div><h1 style="color:#f68b1e;margin:0;">BigDrop Kenya</h1><p style="font-size:0.85rem;color:#666;margin-top:6px;">Nextgen Mall, Suite 40, Mombasa Rd<br>Nairobi · +254 722 359 298<br>info@bigdrop.co.ke</p></div>' +
+        '<div style="text-align:right;"><h2 style="margin:0 0 8px;">' + (isReceipt ? 'RECEIPT' : 'INVOICE') + '</h2><p style="font-size:0.9rem;">Order: <strong>' + order.id + '</strong><br>Tracking: ' + (order.trackingNumber||'—') + '<br>Date: ' + order.date + '<br>Status: ' + order.status + '</p></div></div>' +
+        '<p><strong>Bill to:</strong> ' + (order.customerName||'') + '<br>' + (order.customerEmail||'') + '<br>' + (order.phone||'') + '<br>' + (order.address||'') + '</p>' +
+        '<table><thead><tr><th>Item</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div style="text-align:right;margin-top:16px;"><p>Payment: ' + (order.paymentMethod||'—') + '</p>' +
+        (order.discount ? '<p>Discount: -' + formatPrice(order.discount) + '</p>' : '') +
+        '<p style="font-size:1.2rem;"><strong>Total: ' + formatPrice(order.total) + '</strong></p></div>' +
+        '<p style="margin-top:24px;font-size:0.85rem;color:#888;text-align:center;">Thank you for shopping with BigDrop Kenya.</p>' +
+        (isReceipt || String(order.status).toLowerCase()==='delivered' ? '<p style="text-align:center;margin-top:12px;padding:10px;background:#e8f5ee;color:#0a7a3c;font-weight:700;border-radius:8px;">✓ PAID &amp; DELIVERED</p>' : '');
+    }
+  </script>
+  <script src="js/header.js"></script>
+</body>
+</html>

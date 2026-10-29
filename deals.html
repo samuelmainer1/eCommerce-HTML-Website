@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deals | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="breadcrumbs"><a href="index.html">Home</a> › Deals</div>
+    <div class="section-title"><h2>🔥 Deals & Flash Sales</h2></div>
+    <div class="product-grid" id="deals-grid"></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const deals = getApprovedProducts().filter(p => p.oldPrice);
+    renderProducts('deals-grid', deals);
+  </script>
+</body>
+</html>

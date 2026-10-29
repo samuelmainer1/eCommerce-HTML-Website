@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account | BigDrop Kenya</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container" style="max-width:640px;">
+    <h1 style="margin-bottom:20px;">My Account</h1>
+    <div id="account-box" style="background:#fff;padding:28px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);"></div>
+    <div style="margin-top:24px; display:flex; flex-wrap:wrap; gap:12px;">
+      <a href="orders.html" class="btn btn-outline">My Orders</a>
+      <a href="wishlist.html" class="btn btn-outline">Wishlist</a>
+      <a href="cart.html" class="btn btn-outline">Cart</a>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+  <script>
+    const user = getCurrentUser();
+    const box = document.getElementById('account-box');
+    if (!user) {
+      box.innerHTML = '<p>Please <a href="login.html" style="color:#f68b1e;">login</a> to view your account.</p>';
+    } else {
+      box.innerHTML = '<p><strong>Name:</strong> '+(user.name||user.shopName||'—')+'</p><p><strong>Email:</strong> '+user.email+'</p><p><strong>Role:</strong> '+user.role+'</p>';
+    }
+  </script>
+</body>
+</html>

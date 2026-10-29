@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Product | BigDrop Kenya</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <div class="form-container" style="max-width:560px;">
+    <h1>Edit Product</h1>
+    <div id="alert"></div>
+    <form id="edit-form">
+      <div class="form-group"><label>Title</label><input type="text" id="title" required></div>
+      <div class="form-group"><label>Category</label>
+        <select id="category" required>
+          <option>Phones</option><option>TVs</option><option>Electronics</option>
+          <option>Fashion</option><option>Home</option><option>Beauty</option>
+          <option>Food</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Price (KSh)</label><input type="number" id="price" required min="1"></div>
+      <div class="form-group"><label>Old Price</label><input type="number" id="oldPrice" min="0"></div>
+      <div class="form-group"><label>Stock</label><input type="number" id="stock" required min="0"></div>
+      <div class="form-group"><label>Main Image URL</label><input type="text" id="image"></div>
+      <div class="form-group"><label>Extra images (one URL per line)</label><textarea id="images-extra" rows="3"></textarea></div>
+      <div class="form-group"><label>Description</label><textarea id="description"></textarea></div>
+      <button type="submit" class="btn btn-accent" style="width:100%;margin-bottom:10px;">Save Changes</button>
+      <button type="button" class="btn btn-danger" style="width:100%;" onclick="deleteProduct()">Delete Product</button>
+    </form>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/toast.js"></script>
+  <script>
+    const user = getCurrentUser();
+    if (!user || user.role !== 'vendor') { location.href = 'login.html'; }
+    const id = new URLSearchParams(location.search).get('id');
+    const product = getProductById(id);
+    if (!product || product.vendorId !== user.id) {
+      document.getElementById('alert').innerHTML = '<div class="alert alert-error">Product not found or not yours.</div>';
+      document.getElementById('edit-form').style.display = 'none';
+    } else {
+      document.getElementById('title').value = product.title;
+      document.getElementById('category').value = product.category;
+      document.getElementById('price').value = product.price;
+      document.getElementById('oldPrice').value = product.oldPrice || '';
+      document.getElementById('stock').value = product.stock;
+      document.getElementById('image').value = product.image || '';
+      document.getElementById('images-extra').value = (product.images||[]).slice(1).join('\n');
+      document.getElementById('description').value = product.description || '';
+    }
+
+    document.getElementById('edit-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const products = getProducts();
+      const idx = products.findIndex(p => p.id === id);
+      if (idx === -1) return;
+      products[idx].title = document.getElementById('title').value.trim();
+      products[idx].category = document.getElementById('category').value;
+      products[idx].price = +document.getElementById('price').value;
+      products[idx].oldPrice = +document.getElementById('oldPrice').value || null;
+      products[idx].stock = +document.getElementById('stock').value;
+      products[idx].image = document.getElementById('image').value.trim() || products[idx].image;
+      const extra = (document.getElementById('images-extra').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      products[idx].images = [products[idx].image].concat(extra);
+      products[idx].description = document.getElementById('description').value.trim();
+      // Re-approval if was approved and major edit - keep status as is for demo
+      saveProducts(products);
+      document.getElementById('alert').innerHTML = '<div class="alert alert-success">Product updated.</div>';
+      setTimeout(() => location.href = 'dashboard.html', 800);
+    });
+
+    function deleteProduct() {
+      if (!confirm('Delete this product permanently?')) return;
+      const products = getProducts().filter(p => p.id !== id);
+      saveProducts(products);
+      location.href = 'dashboard.html';
+    }
+  </script>
+  <script src="../js/header.js"></script>
+  <div id="site-footer"></div>
+  <script src="../js/footer.js"></script>
+</body>
+</html>
